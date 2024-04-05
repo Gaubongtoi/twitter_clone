@@ -20,18 +20,18 @@
 // const express = require('express')
 import express from 'express'
 import usersRouter from './routes/users.routes'
-import {run} from './services/database.services'
+import databaseService from './services/database.services'
 const app = express()
 const port = 4001
 // import { Request, Response, NextFunction } from 'express'
-app.use(express.json());
+app.use(express.json())
 
 app.use('/api/user', usersRouter)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
-run().catch(console.dir);
+databaseService.connect()
 app.listen(port, () => {
   console.log(`Example app listening on port http://localhost:${port}`)
 })
