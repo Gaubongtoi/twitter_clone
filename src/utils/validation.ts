@@ -1,13 +1,15 @@
+import { EntityError, ErrorWithStatus } from './../models/Errors';
 import express from 'express'
 import { body, validationResult, ContextRunner, ValidationChain } from 'express-validator'
 import { RunnableValidationChains } from 'express-validator/src/middlewares/schema'
+import HTTP_STATUS from '~/constants/httpStatus';
 // Manually running validations
 // can be reused by many routes
 
 // sequential processing, stops running validations chain if the previous one fails.
 export const validate = (validation: RunnableValidationChains<ValidationChain>) => {
   // Hàm này sẽ nhận tham số là những validation đã được cấu hình bên users.middleware
-  // Và trả về là 1 function handler, tương tự như cấu trúc của 1 handler, nó có req, res, next
+  // Và trả về là 1 function handler, tương tự như cấu trúc của 1 request handler, nó có req, res, next
   // Đồng thời nhận vào 1 tham só là những validation có kiểu dữ liệu là RunnableValidationChains<ValidationChain>
   // * RunnableValidationChains: là 1 kiểu dữ liệu đại diện cho 1 chuỗi các quy tắc validation có thể chạy được
   return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -21,7 +23,38 @@ export const validate = (validation: RunnableValidationChains<ValidationChain>) 
     if (errors.isEmpty()) {
       return next()
     }
-    // Nếu không thì dispatch ra cho người dùng 1 lỗi 400: lỗi phía client nhập sai
-    res.status(400).json({ errors: errors.mapped() })
+    // errorsObj này sẽ trả về 1 obj chứa những lỗi
+    // console.log(errors);
+    const errorsObj = errors.mapped()
+    console.log(errorsObj);
+    
+    // Nó được kế thừa
+    const entityError = new EntityError({errors: {}})
+    // console.log(entityError);
+    
+    // Lặp qua Object này
+    for(const key in errorsObj){
+      // Lấy ra msg bằng destructuring 
+      console.log(key);
+      
+      const {msg} = errorsObj[key]
+      console.log(msg);
+      
+      // console.log(msg);
+      // console.log(errorsObj[key]);
+      // Kiểm tra xem nó có phải là 1 đối tượng được tạo ra từ class ErrorWithStatus không và trong msg.status đó có khác với lỗi 
+      // validation không (UNPROCESSABLE_ENTITY: 422)
+      if(msg instanceof ErrorWithStatus && msg.status !== HTTP_STATUS.UNPROCESSABLE_ENTITY ) {
+        // Nếu như thoả mãn điều kiện, next lỗi qua errorMiddleware
+        return next(msg)
+      }
+      // 
+      entityError.errors[key] = errorsObj[key]
+      
+    }
+    
+    // Nếu không thì dispatch ra cho người dùng 1 lỗi 422: Lỗi validation
+    // res.status(422).json({ errors: errorsObj })
+    next(entityError)
   }
 }

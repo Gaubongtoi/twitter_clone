@@ -1,6 +1,7 @@
-import { Router } from 'express'
+import { NextFunction, Router } from 'express'
 import { loginController, registerController } from '~/controllers/users.controllers'
 import { loginValidator, registerValidator } from '~/middlewares/users.middlewares'
+import { wrapReqHandler } from '~/utils/handlers'
 const usersRouter = Router()
 
 // Router-level middleware:
@@ -14,7 +15,11 @@ usersRouter
    * Body: {name: string, email: string, password: string,confirm_password: string (validate), date_of_birth: ISOString}
    *
    */
-  .post('/register', registerValidator, registerController)
+  .post(
+    '/register',
+    registerValidator,
+    wrapReqHandler(registerController)
+  )
 //
 
 export default usersRouter

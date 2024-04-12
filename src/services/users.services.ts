@@ -9,18 +9,20 @@ import { TokenType } from '~/constants/enums'
 // chỉ cần khai báo class UsersService và .register({tham số truyền vào}) và xử lý
 class UsersService {
   // Method signAccesstoken
-  private signAccessToken(user_id: string){
+  private signAccessToken(user_id: string) {
     return signToken({
       payload: {
         user_id,
         type: TokenType.AccessToken
-      }, 
+      },
       options: {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
       }
     })
   }
-  private signRefreshToken(user_id: string){
+  private signRefreshToken(user_id: string) {
+    // SignToken này sẽ trả về 1 Promise => điều này cho phép chúng ta xử lý bất đồng bộ
+    // một cách dễ dàng
     return signToken({
       payload: {
         user_id,
@@ -33,16 +35,23 @@ class UsersService {
   }
   // Method: register
   async register(payload: RegisterReqBody) {
+    // Cú pháp databaseService.<collections trong mongoDB>.insertOne()
     const result = await databaseService.users.insertOne(
+      // Lúc này chúng ta sẽ khởi tạo 1 đối tượng User và truyền vào 
+      // những thuộc tính mà constructor của User định nghĩa
       new User({
+        // payload: Toàn bộ req.body
         ...payload,
-        // Convert cho cung kieu du liẹu cua RegisterReqBody
+        // Ghi đè lại 2 thuộc tính là date_of_birth và password
+        // Convert cho cung kieu du liẹu cua RegisterReqBody (yêu cầu dữ liệu là string)
         date_of_birth: new Date(payload.date_of_birth),
+        // Hash password: decode password
         password: hashPassword(payload.password)
       })
     )
+    // Sau khi thêm vào db thành công nó sẽ trả về insertedId => ID của user
     const user_id = result.insertedId.toString()
-    // 
+    // sau đó chúng ta sẽ đăng ký token
     const [access_token, refresh_token] = await Promise.all([
       this.signAccessToken(user_id),
       this.signRefreshToken(user_id)

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { checkSchema } from 'express-validator'
+import { ErrorWithStatus } from '~/models/Errors'
 import usersService from '~/services/users.services'
 import { validate } from '~/utils/validation'
 
@@ -55,7 +56,8 @@ export const registerValidator = validate(
         options: async (value, { req }) => {
           const email = await usersService.checkIsEmail(value)
           if (email) {
-            throw new Error('Email is exist!')
+            // throw ra 1 lỗi, đồng thời tạo ra 1 đối tượng được tạo ra từ ErrorWithStatus và xuất ra lỗi
+            throw new ErrorWithStatus({message: 'Email already exist!', status: 401})
           }
           return true
         }
@@ -135,7 +137,8 @@ export const registerValidator = validate(
           strict: true,
           strictSeparator: true
         }
-      }
+      },
+      errorMessage: 'Date of birth must be ISO8601'
     }
   })
 )

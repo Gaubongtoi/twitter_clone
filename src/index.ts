@@ -18,19 +18,24 @@
 // console.log(name)
 // handle().then(console.log)
 // const express = require('express')
-import express from 'express'
+import express, { NextFunction } from 'express'
 import usersRouter from './routes/users.routes'
 import databaseService from './services/database.services'
+import { defaultErrorHandler } from './middlewares/errors.middlewares'
 const app = express()
 const port = 4001
 // import { Request, Response, NextFunction } from 'express'
+// Compile and encode json -> {obj}
 app.use(express.json())
-
+// Router of User
 app.use('/api/user', usersRouter)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
+// Đây sẽ là nơi tiếp nhận hết tất cả các lỗi (error)
+app.use(defaultErrorHandler)
+// Connecting to MongoDatabase
 databaseService.connect()
 app.listen(port, () => {
   console.log(`Example app listening on port http://localhost:${port}`)
