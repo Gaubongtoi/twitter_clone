@@ -1,4 +1,3 @@
 export const USER_MESSAGES = {
-  VALIDATION_ERROR: 'Validation error', 
-} as const 
-
+  VALIDATION_ERROR: 'Validation error'
+} as const

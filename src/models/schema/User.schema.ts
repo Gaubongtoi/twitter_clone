@@ -3,7 +3,7 @@ import { UserVerifyStatus } from '~/constants/enums'
 // Kiểu dữ liệu số
 
 // Quy định kiểu dữ liệu cho từng trường
-interface UserType {
+interface IUserType {
   _id?: ObjectId
   name: string
   email: string
@@ -42,15 +42,15 @@ export default class User {
   avatar: string
   cover_photo: string
   // Khởi tạo Constructure : Khuôn mẫu
-  constructor(user: UserType) {
+  constructor(user: IUserType) {
     const date = new Date()
     this._id = user._id
     this.name = user.name || ''
     this.email = user.email
     this.date_of_birth = user.date_of_birth || new Date()
     this.password = user.password
-    this.create_at = user.create_at || date
-    this.update_at = user.update_at || date
+    this.create_at = user.create_at || date // same with update_at
+    this.update_at = user.update_at || date // same with create_at
     this.email_verify_token = user.email_verify_token || ''
     this.forgot_password_token = user.forgot_password_token || ''
     this.verify = user.verify || UserVerifyStatus.Unverified

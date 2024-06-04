@@ -1,6 +1,7 @@
 import { MongoClient, ServerApiVersion, Db, Collection } from 'mongodb'
 import { config } from 'dotenv'
 import User from '~/models/schema/User.schema'
+import RefreshToken from '~/models/schema/RefreshToken.schema'
 config()
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@practicemongo.ltrx9ag.mongodb.net/?retryWrites=true&w=majority&appName=PracticeMongo`
 class DatabaseService {
@@ -14,6 +15,9 @@ class DatabaseService {
   // Getter
   get users(): Collection<User> {
     return this.db.collection(process.env.DB_USERS_COLLECTION as string)
+  }
+  get refreshTokens(): Collection<RefreshToken> {
+    return this.db.collection(process.env.DB_REFRESH_TOKENS_COLLECTION as string)
   }
   async connect() {
     try {
