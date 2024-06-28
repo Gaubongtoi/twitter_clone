@@ -18,21 +18,37 @@
 // console.log(name)
 // handle().then(console.log)
 // const express = require('express')
-import express, { NextFunction } from 'express'
+import express from 'express'
 import usersRouter from './routes/users.routes'
 import databaseService from './services/database.services'
 import { defaultErrorHandler } from './middlewares/errors.middlewares'
+import mediasRouter from './routes/medias.routes'
+import { initFolder } from './utils/files'
+import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from './constants/dir'
+import staticRouter from './routes/static.routes'
+import tweetsRoute from './routes/tweets.routes'
+import bookmarksRouter from './routes/bookmarks.routes'
+
 const app = express()
-const port = 4001
+const port = process.env.PORT
+// console.log(option.development);
+
+// Tạo folder uploads
+initFolder()
 // import { Request, Response, NextFunction } from 'express'
 // Compile and encode json -> {obj}
 app.use(express.json())
 // Router of User
 app.use('/api/user', usersRouter)
+app.use('/api/medias', mediasRouter)
+app.use('/api/tweets', tweetsRoute)
+app.use('/api/bookmarks', bookmarksRouter)
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+app.use('/static', staticRouter)
+app.use('/static', express.static(UPLOAD_VIDEO_DIR))
+// app.get('/', (req, res) => {
+//   res.send('Hello World!')
+// })
 // Đây sẽ là nơi tiếp nhận hết tất cả các lỗi (error)
 app.use(defaultErrorHandler)
 // Connecting to MongoDatabase

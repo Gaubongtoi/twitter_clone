@@ -2,6 +2,10 @@ import { MongoClient, ServerApiVersion, Db, Collection } from 'mongodb'
 import { config } from 'dotenv'
 import User from '~/models/schema/User.schema'
 import RefreshToken from '~/models/schema/RefreshToken.schema'
+import Followers from '~/models/schema/Followers.schema'
+import Tweet from '~/models/schema/Tweets.schema'
+import Hashtags from '~/models/schema/Hashtags.schema'
+import Bookmark from '~/models/schema/Bookmarks.schema'
 config()
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@practicemongo.ltrx9ag.mongodb.net/?retryWrites=true&w=majority&appName=PracticeMongo`
 class DatabaseService {
@@ -18,6 +22,18 @@ class DatabaseService {
   }
   get refreshTokens(): Collection<RefreshToken> {
     return this.db.collection(process.env.DB_REFRESH_TOKENS_COLLECTION as string)
+  }
+  get followers(): Collection<Followers> {
+    return this.db.collection(process.env.DB_FOLLOWERS_COLLECTION as string)
+  }
+  get tweets(): Collection<Tweet> {
+    return this.db.collection(process.env.DB_TWEETS_COLLECTION as string)
+  }
+  get hashtags(): Collection<Hashtags> {
+    return this.db.collection(process.env.DB_HASHTAGS_COLLECTION as string)
+  }
+  get bookmarks(): Collection<Bookmark> {
+    return this.db.collection(process.env.DB_BOOKMARKS_COLLECTION as string)
   }
   async connect() {
     try {

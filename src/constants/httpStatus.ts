@@ -3,9 +3,12 @@ const HTTP_STATUS = {
   CREATED: 201,
   ACCEPTED: 202,
   NO_CONTENT: 204,
+  PARTIAL_CONTENT: 206,
   UNPROCESSABLE_ENTITY: 422,
+  BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
   NOT_FOUND: 404,
+  FORBIDDEN: 403,
   INTERNAL_SERVER_ERROR: 500
 } as const // để chắc chắn rằng những key đó đều là constant
 

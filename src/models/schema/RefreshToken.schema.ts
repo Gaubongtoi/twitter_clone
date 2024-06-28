@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb'
 interface IRefreshTokenType {
   _id?: ObjectId
   token: string
-  created_at?: Date
+  created_at?: Date //optional
   user_id: ObjectId
 }
 

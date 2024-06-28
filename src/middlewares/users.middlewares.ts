@@ -9,6 +9,10 @@ import hashPassword from '~/utils/crypto'
 import { verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
 import { capitalize } from 'lodash'
+import { TokenPayload } from '~/models/requests/User.requests'
+import { ObjectId } from 'mongodb'
+import { UserVerifyStatus } from '~/constants/enums'
+import { REGEX_USERNAME } from '~/constants/regex'
 
 // Middleware (tiền xử lý response và request): đóng vai trò là cầu nối giữa người dùng và phần nhân của hệ thống
 // là trung gian của req/res và các xử lý logic bên trong web server
@@ -260,6 +264,8 @@ export const refreshTokenValidator = validate(
               // const decode_refresh_token = await verifyToken({ token: value })
               ;(req as Request).decode_refresh_token = decode_refresh_token
             } catch (error) {
+              console.log(error)
+
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
                   message: capitalize(error.message),
@@ -298,13 +304,509 @@ export const emailVerifyTokenValidator = validate(
               })
               ;(req as Request).decode_verify_email_token = decode_verify_email_token
             } catch (error) {
-              throw new ErrorWithStatus({
-                message: capitalize((error as JsonWebTokenError).message),
-                status: HTTP_STATUS.UNAUTHORIZED
-              })
+              if (error instanceof JsonWebTokenError) {
+                throw new ErrorWithStatus({
+                  message: capitalize(error.message),
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
               throw error
             }
-            
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const forgotPasswordValidator = validate(
+  checkSchema(
+    {
+      email: {
+        notEmpty: {
+          errorMessage: 'Email is required!'
+        },
+        isEmail: {
+          errorMessage: 'Email is invalid'
+        },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            console.log(value)
+
+            const user = await databaseService.users.findOne({
+              email: value
+            })
+            if (!user) {
+              throw new ErrorWithStatus({ message: 'Email is not exist!', status: HTTP_STATUS.NOT_FOUND })
+            }
+            req.user = user
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const verifyForgotPasswordTokenValidator = validate(
+  checkSchema(
+    {
+      forgot_password_token: {
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!value) {
+              throw new ErrorWithStatus({
+                message: 'Forgot password token is required!',
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+
+            try {
+              const decode_forgot_password_token = await verifyToken({
+                token: value,
+                secretOnPublicKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
+              })
+              const { user_id } = decode_forgot_password_token
+              const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+              if (user === null) {
+                throw new ErrorWithStatus({
+                  message: 'User not found',
+                  status: HTTP_STATUS.NOT_FOUND
+                })
+              }
+              if (user.forgot_password_token !== value) {
+                throw new ErrorWithStatus({
+                  message: 'Forgot Password Token is invalid!',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+            } catch (error) {
+              // JsonWebTokenError này sẽ là lỗi của thằng jwt trả về khi mà method verifyToken lỗi (invalid, expired,...) về token
+              // thì sẽ cho nó là errorStatus: 401 -> để tránh trường hợp trả về lỗi 422 (Validation)
+              if (error instanceof JsonWebTokenError) {
+                throw new ErrorWithStatus({
+                  message: capitalize(error.message),
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              throw error
+            }
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const resetPasswordValidator = validate(
+  checkSchema(
+    {
+      password: {
+        notEmpty: {
+          errorMessage: 'Password is required!'
+        },
+        isString: {
+          errorMessage: 'Password must be string'
+        },
+        isLength: {
+          options: {
+            min: 6
+          },
+          errorMessage: 'Password must be at least 6 characters long'
+        },
+        isStrongPassword: {
+          // errorMessage: '',
+          options: {
+            minLength: 6,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+            // returnScore: true,
+          },
+          errorMessage: "Password isn't strong enough"
+        }
+      },
+      confirm_password: {
+        notEmpty: {
+          errorMessage: 'Confirm Password is required'
+        },
+        isString: {
+          errorMessage: 'Confirm Password must be string'
+        },
+        isLength: {
+          options: {
+            min: 6
+          },
+          errorMessage: 'Confirm Password must be at least 6 characters long'
+        },
+        isStrongPassword: {
+          options: {
+            minLength: 6,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+            // returnScore: true,
+          },
+          errorMessage: "Confirm Password isn't strong enough"
+        },
+        // custom là 1 tuỳ chọn (optional) cho các quy tắc kiểm tra trong checkSchema. Nó cho phép bạn xác định
+        // 1 hàm (function) kiểm tra tuỳ chỉnh để kiểm tra các điều kiện không phù hợp với các quy tắc kiểm tra
+        // tiêu chuẩn
+        custom: {
+          // 2 tham số trong hàm:
+          //  + value: là giá trị của trường đang được kiểm tra
+          //  + req: là đối tượng request của Express
+          options: (value, { req }) => {
+            // console.log(value)
+            if (value !== req.body.password) {
+              // throw new Error ~~ errorMesage
+              throw new Error('Password Confirmation does not match Password!')
+            }
+            return true
+          }
+        }
+      },
+      forgot_password_token: {
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!value) {
+              throw new ErrorWithStatus({
+                message: 'Forgot password token is required!',
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+
+            try {
+              const decode_forgot_password_token = await verifyToken({
+                token: value,
+                secretOnPublicKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
+              })
+              const { user_id } = decode_forgot_password_token
+              const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+              if (user === null) {
+                throw new ErrorWithStatus({
+                  message: 'User not found',
+                  status: HTTP_STATUS.NOT_FOUND
+                })
+              }
+              if (user.forgot_password_token !== value) {
+                throw new ErrorWithStatus({
+                  message: 'Forgot Password Token is invalid!',
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              ;(req as Request).decode_forgot_password_token = decode_forgot_password_token
+            } catch (error) {
+              // JsonWebTokenError này sẽ là lỗi của thằng jwt trả về khi mà method verifyToken lỗi (invalid, expired,...) về token
+              // thì sẽ cho nó là errorStatus: 401 -> để tránh trường hợp trả về lỗi 422 (Validation)
+              if (error instanceof JsonWebTokenError) {
+                throw new ErrorWithStatus({
+                  message: capitalize(error.message),
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+              throw error
+            }
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+// Kiểm tra tài khoản đã được verify email hay chưa
+export const verifiedUserValidatior = async (req: Request, res: Response, next: NextFunction) => {
+  // TokenPayload là kiểu dữ liệu mà jwt package trả về
+  const { verify } = req.decode_authorization as TokenPayload
+  if (verify !== UserVerifyStatus.Verified) {
+    next(
+      new ErrorWithStatus({
+        message: 'User not verified',
+        status: HTTP_STATUS.FORBIDDEN
+      })
+    )
+  }
+  next()
+}
+
+export const updateMeValidator = validate(
+  checkSchema(
+    {
+      name: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Name must be string'
+        },
+        // Plugin max and min
+        isLength: {
+          options: {
+            min: 1,
+            max: 255
+          },
+          errorMessage: 'Name must be between 1 and 255 characters long'
+        }
+      },
+      date_of_birth: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isISO8601: {
+          options: {
+            strict: true,
+            strictSeparator: true
+          }
+        },
+        errorMessage: 'Date of birth must be ISO8601'
+      },
+      bio: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Bio must be string'
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: 'Bio length must be from 1 to 200'
+        }
+      },
+      location: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Location must be string'
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: 'Location length must be from 1 to 200'
+        }
+      },
+      website: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Website must be string'
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 400
+          },
+          errorMessage: 'Website length must be from 1 to 400'
+        }
+      },
+      username: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Username must be string'
+        },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!REGEX_USERNAME.test(value) === false) {
+              throw new Error(
+                'Username must be 4-15 characters long and contain only letters, number, underscores and not only number'
+              )
+            }
+            const user = await databaseService.users.findOne({ username: value })
+            // Nếu đã tồn tại username này trong DB thì chúng ta không cho phép update
+            if (user) {
+              throw Error('Username existed!')
+            }
+          }
+        }
+      },
+      avatar: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Avatar must be string'
+        },
+        trim: true,
+
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: 'Avatar length must be from 1 to 200'
+        }
+      },
+      cover_photo: {
+        optional: true, // không truyền thì không check, truyền mới check:)
+        isString: {
+          errorMessage: 'Cover Photo must be string'
+        },
+        trim: true,
+
+        isLength: {
+          options: {
+            min: 1,
+            max: 400
+          },
+          errorMessage: 'Cover Photo length must be from 1 to 400'
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const followValidator = validate(
+  checkSchema(
+    {
+      followed_user_id: {
+        // isString: true,
+        custom: {
+          options: async (value: string, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: 'ID followed_user_id invalid',
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            const followed_user = databaseService.users.findOne({
+              _id: new ObjectId(value)
+            })
+            if (followed_user === null) {
+              throw new ErrorWithStatus({
+                message: 'User not found',
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+export const unfollowValidator = validate(
+  checkSchema(
+    {
+      user_id: {
+        custom: {
+          options: async (value: string, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: 'user_id invalid',
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            const followed_user = databaseService.users.findOne({
+              _id: new ObjectId(value)
+            })
+            if (followed_user === null) {
+              throw new ErrorWithStatus({
+                message: 'User not found',
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: {
+        notEmpty: {
+          errorMessage: 'Field old password is required!'
+        },
+        isString: {
+          errorMessage: 'Old password must be string'
+        },
+        custom: {
+          options: async (value, { req }) => {
+            const { user_id } = (req as Request).decode_authorization as TokenPayload
+            console.log(user_id)
+
+            const user = await databaseService.users.findOne({
+              _id: new ObjectId(user_id)
+            })
+            if (user === null) {
+              throw new ErrorWithStatus({ message: 'User not found!', status: HTTP_STATUS.NOT_FOUND })
+            }
+            const { password } = user
+            const isMatched = hashPassword(value) === password
+            if (!isMatched) {
+              throw new ErrorWithStatus({
+                message: 'Old password is incorrect!',
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+          }
+        }
+      },
+      new_password: {
+        notEmpty: {
+          errorMessage: 'Password is required!'
+        },
+        isString: {
+          errorMessage: 'Password must be string'
+        },
+        isLength: {
+          options: {
+            min: 6
+          },
+          errorMessage: 'Password must be at least 6 characters long'
+        },
+        isStrongPassword: {
+          // errorMessage: '',
+          options: {
+            minLength: 6,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+            // returnScore: true,
+          },
+          errorMessage: "Password isn't strong enough"
+        }
+      },
+      confirm_new_password: {
+        notEmpty: {
+          errorMessage: 'Confirm Password is required'
+        },
+        isString: {
+          errorMessage: 'Confirm Password must be string'
+        },
+        isLength: {
+          options: {
+            min: 6
+          },
+          errorMessage: 'Confirm Password must be at least 6 characters long'
+        },
+        isStrongPassword: {
+          options: {
+            minLength: 6,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+            // returnScore: true,
+          },
+          errorMessage: "Confirm Password isn't strong enough"
+        },
+        custom: {
+          options: async (value, { req }) => {
+            if (value !== req.body.new_password) {
+              throw new Error('Password Confirmation does not match Password!')
+            }
           }
         }
       }
