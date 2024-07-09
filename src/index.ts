@@ -28,7 +28,9 @@ import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from './constants/dir'
 import staticRouter from './routes/static.routes'
 import tweetsRoute from './routes/tweets.routes'
 import bookmarksRouter from './routes/bookmarks.routes'
-
+import likesRouter from './routes/likes.routes'
+import searchRouter from './routes/search.routes'
+// import './utils/faker'
 const app = express()
 const port = process.env.PORT
 // console.log(option.development);
@@ -43,6 +45,8 @@ app.use('/api/user', usersRouter)
 app.use('/api/medias', mediasRouter)
 app.use('/api/tweets', tweetsRoute)
 app.use('/api/bookmarks', bookmarksRouter)
+app.use('/api/likes', likesRouter)
+app.use('/api/search', searchRouter)
 
 app.use('/static', staticRouter)
 app.use('/static', express.static(UPLOAD_VIDEO_DIR))
@@ -52,7 +56,9 @@ app.use('/static', express.static(UPLOAD_VIDEO_DIR))
 // Đây sẽ là nơi tiếp nhận hết tất cả các lỗi (error)
 app.use(defaultErrorHandler)
 // Connecting to MongoDatabase
-databaseService.connect()
+databaseService.connect().then(() => {
+  databaseService.indexTweets()
+})
 app.listen(port, () => {
   console.log(`Example app listening on port http://localhost:${port}`)
 })

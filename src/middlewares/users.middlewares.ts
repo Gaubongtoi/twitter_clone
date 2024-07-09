@@ -303,6 +303,7 @@ export const emailVerifyTokenValidator = validate(
                 secretOnPublicKey: process.env.JWT_SECRET_EMAIL_VERIFY_TOKEN as string
               })
               ;(req as Request).decode_verify_email_token = decode_verify_email_token
+              // console.log("Hellooooooooo");
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
@@ -814,3 +815,14 @@ export const changePasswordValidator = validate(
     ['body']
   )
 )
+
+// Validator isUserLoggedInValidator
+// Tham so nhan vao la 1 middleware co 3 tham so va khong tra ve gia tri nao ca => void
+export const isUserLoggedInValidator = (middleware: (req: Request, res: Response, next: NextFunction) => void) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.headers.authorization) {
+      return middleware(req, res, next)
+    }
+    next()
+  }
+}

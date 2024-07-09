@@ -1,9 +1,16 @@
 import { validate } from '~/utils/validation'
 import { checkSchema } from 'express-validator'
-import { MediaType, TweetAudience, TweetType } from '~/constants/enums'
+import { MediaType, TweetAudience, TweetType, UserVerifyStatus } from '~/constants/enums'
 import { numberEnumToArray } from '~/utils/common'
 import { ObjectId } from 'mongodb'
 import { isEmpty } from 'lodash'
+import databaseService from '~/services/database.services'
+import { ErrorWithStatus } from '~/models/Errors'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { NextFunction, Request, Response } from 'express'
+import Tweet from '~/models/schema/Tweets.schema'
+import { TokenPayload } from '~/models/requests/User.requests'
+import { wrapReqHandler } from '~/utils/handlers'
 const tweetTypes = numberEnumToArray(TweetType)
 const audienceTypes = numberEnumToArray(TweetAudience)
 const mediaTypes = numberEnumToArray(MediaType)
@@ -61,7 +68,7 @@ export const createTweetValidator = validate(
           ) {
             throw new Error('Content must be a non empty string')
           }
-          if (type === TweetType.Retweet && value !== null) {
+          if (type === TweetType.Retweet && Boolean(value)) {
             throw new Error('Content must be null')
           }
           return true
@@ -106,3 +113,244 @@ export const createTweetValidator = validate(
     }
   })
 )
+
+export const tweetIdValidator = validate(
+  checkSchema(
+    {
+      tweet_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: 'Tweet ID is not valid',
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
+            const [tweet] = await databaseService.tweets
+              .aggregate<Tweet>([
+                {
+                  // Lọc những tweet có _id là value (tweet_id: req)
+                  $match: {
+                    _id: new ObjectId(value as string)
+                  }
+                },
+                {
+                  // Query
+                  $lookup: {
+                    // Truy vấn tới collection hashtags
+                    from: 'hashtags',
+                    // Trường nào để tham chiếu ở tweet
+                    localField: 'hashtags',
+                    // Lấy trường ở trên tham chiếu với trường _id ở collection hashtags
+                    foreignField: '_id',
+                    // Đặt tên là hashtags
+                    as: 'hashtags'
+                  }
+                },
+                {
+                  $lookup: {
+                    // Truy vấn tới collection users
+                    from: 'users',
+                    // Lấy trường mentions ở collection tweet
+                    localField: 'mentions',
+                    // Lấy trường đó để tham chiếu với _id ở user => Lấy ra 1 mảng chứa những obj user
+                    foreignField: '_id',
+                    // Đặt tên
+                    as: 'mentions'
+                  }
+                },
+                {
+                  // $addFields là 1 stage, được sử dụng để thêm các trường mới vào tài liệu đầu ra hoặc ghi đè các trường hiện
+                  // có với các giá trị tính toán
+                  $addFields: {
+                    // Ghi đè lại trường mentions => để xuất ra những trường cần thiết và ẩn những trường chứa thông tin nhạy cảm
+                    mentions: {
+                      // $map được xem như là 1 toán tử cho phép bạn áp dụng 1 biểu thức cho mỗi phần tử của 1 mảng
+                      // và trả về 1 mảng mới chứa các giá trị đã được biến đổi
+                      $map: {
+                        // input: Mảng đầu vào
+                        input: '$mentions',
+                        // as: Xác định tên biến cho mỗi phần tử của mảng đầu vào ở biểu thức in
+                        as: 'mention',
+                        // in: Sẽ tạo ra 1 đối tượng mới với các trường
+                        in: {
+                          _id: '$$mention._id',
+                          name: '$$mention.name',
+                          email: '$$mention.email',
+                          username: '$$mention.name'
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  $lookup: {
+                    from: 'bookmarks',
+                    localField: '_id',
+                    foreignField: 'tweet_id',
+                    as: 'bookmarks'
+                  }
+                },
+                {
+                  $lookup: {
+                    from: 'likes',
+                    localField: '_id',
+                    foreignField: 'tweet_id',
+                    as: 'likes'
+                  }
+                },
+                {
+                  $lookup: {
+                    from: 'tweet',
+                    localField: '_id',
+                    foreignField: 'parent_id',
+                    as: 'tweet_children'
+                  }
+                },
+                {
+                  $addFields: {
+                    bookmarks: {
+                      $size: '$bookmarks'
+                    },
+                    likes: {
+                      $size: '$likes'
+                    },
+                    retweet_count: {
+                      $size: {
+                        $filter: {
+                          input: '$tweet_children',
+                          as: 'item',
+                          cond: {
+                            $eq: ['$$item.type', TweetType.Retweet]
+                          }
+                        }
+                      }
+                    },
+                    comment_count: {
+                      $size: {
+                        $filter: {
+                          input: '$tweet_children',
+                          as: 'item',
+                          cond: {
+                            $eq: ['$$item.type', TweetType.Comment]
+                          }
+                        }
+                      }
+                    },
+                    quote_count: {
+                      $size: {
+                        $filter: {
+                          input: '$tweet_children',
+                          as: 'item',
+                          cond: {
+                            $eq: ['$$item.type', TweetType.QuoteTweet]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  $project: {
+                    tweet_children: 0
+                  }
+                }
+              ])
+              .toArray()
+            if (!tweet) {
+              throw new ErrorWithStatus({ message: 'Tweet not found!', status: HTTP_STATUS.NOT_FOUND })
+            }
+            ;(req as Request).tweet = tweet
+            return true
+          }
+        }
+      }
+    },
+    ['params', 'body']
+  )
+)
+export const getTweetChildValidator = validate(
+  checkSchema(
+    {
+      tweet_type: {
+        isIn: {
+          // Check type với 1 mảng đã được định nghĩa và kiểm tra value đầu vào có nằm trong đó hay không
+          options: [tweetTypes],
+          // Nếu không sẽ xuất ra lỗi
+          errorMessage: 'Invalid Types of Tweet'
+        }
+      }
+    },
+    ['query']
+  )
+)
+
+export const paginationValidator = validate(
+  checkSchema(
+    {
+      limit: {
+        isNumeric: true,
+        custom: {
+          options: async (value, { req }) => {
+            const num = Number(value)
+            if (num > 100 || num < 1) {
+              throw new Error('Maximum of limit is 100')
+            }
+            return true
+          }
+        }
+      },
+      page: {
+        isNumeric: true,
+        custom: {
+          options: async (value, { req }) => {
+            const num = Number(value)
+            if (num < 1) {
+              throw new Error('Page > 0')
+            }
+            return true
+          }
+        }
+      }
+    },
+    ['query']
+  )
+)
+
+export const audienceValidator = wrapReqHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const tweet = req.tweet as Tweet
+  // Kiểm tra trạng thái của tweet là pulbic hay là circle
+  if (tweet.audience === TweetAudience.TwitterCircle) {
+    // Kiểm tra người xem tweet này đã đăng nhập hay chưa
+    if (!req.decode_authorization) {
+      throw new ErrorWithStatus({
+        message: 'Access Token is required!',
+        status: HTTP_STATUS.UNAUTHORIZED
+      })
+    }
+    // Kiểm tra tài khoản của khán giả (khoá hoặc bị xoá)
+    const author = await databaseService.users.findOne({
+      _id: new ObjectId(tweet.user_id)
+    })
+    console.log(author)
+    console.log(author?.verify)
+
+    if (!author || author.verify === UserVerifyStatus.Banned) {
+      throw new ErrorWithStatus({
+        message: 'User not found',
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    // Kiểm tra xem người khán giả đăng nhập bên phía client có nằm trong Tweet Circle hay không
+    const { user_id } = req.decode_authorization as TokenPayload
+    const isExistInCircle = author?.twitter_circle.some((user_circle_id) => user_circle_id.equals(user_id))
+    // Đồng thời check xem mình có phải là tác giả hay không
+    if (!isExistInCircle && !author._id.equals(user_id)) {
+      throw new ErrorWithStatus({
+        message: 'Tweet is not public',
+        status: HTTP_STATUS.FORBIDDEN
+      })
+    }
+  }
+  next()
+})

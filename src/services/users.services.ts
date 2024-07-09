@@ -224,24 +224,16 @@ class UsersService {
       this.signAccessToken({ user_id: user_id, verify: UserVerifyStatus.Verified }),
       this.signRefreshToken({ user_id: user_id, verify: UserVerifyStatus.Verified }),
       databaseService.users.updateOne(
-        // Tham số thứ nhất là 1 obj filter -> tìm kiếm user bằng id
+        // Tham số thứ nhất là một obj filter -> tìm kiếm user bằng id
         { _id: new ObjectId(user_id) },
-        // Tham số thứ hai sẽ là những bao gồm các method dùng để update
-        // [{
-        //   $set: {
-        //     email_verify_token: '',
-        //     // updated_at: "$$NOW" //MongoDB
-        //     verify: UserVerifyStatus.Verified
-        //   }
-        // }]
+        // Tham số thứ hai là một obj update với các method dùng để update
         {
           $set: {
             email_verify_token: '',
-            // update_at: new Date(),
             verify: UserVerifyStatus.Verified
           },
           $currentDate: {
-            update_at: true // MongoDB
+            update_at: true // MongoDB sẽ cập nhật trường này với thời gian hiện tại
           }
         }
       )

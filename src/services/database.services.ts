@@ -6,6 +6,7 @@ import Followers from '~/models/schema/Followers.schema'
 import Tweet from '~/models/schema/Tweets.schema'
 import Hashtags from '~/models/schema/Hashtags.schema'
 import Bookmark from '~/models/schema/Bookmarks.schema'
+import Likes from '~/models/schema/Likes.schema'
 config()
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@practicemongo.ltrx9ag.mongodb.net/?retryWrites=true&w=majority&appName=PracticeMongo`
 class DatabaseService {
@@ -15,6 +16,12 @@ class DatabaseService {
     // Create a MongoClient with a MongoClientOptions object to set the Stable API version
     this.client = new MongoClient(uri)
     this.db = this.client.db(process.env.DB_NAME)
+  }
+  async indexTweets() {
+    const exists = await this.tweets.indexExists(['content_text'])
+    if (!exists) {
+      this.tweets.createIndex({ content: 'text' }, { default_language: 'none' })
+    }
   }
   // Getter
   get users(): Collection<User> {
@@ -34,6 +41,9 @@ class DatabaseService {
   }
   get bookmarks(): Collection<Bookmark> {
     return this.db.collection(process.env.DB_BOOKMARKS_COLLECTION as string)
+  }
+  get likes(): Collection<Likes> {
+    return this.db.collection(process.env.DB_LIKES_COLLECTION as string)
   }
   async connect() {
     try {

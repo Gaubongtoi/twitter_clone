@@ -59,7 +59,7 @@ export const oauthController = async (req: Request, res: Response) => {
   //   prompt: 'consent'
   // }
   const { code } = req.query
-  const result = await usersService.oauth(code as string)
+  const result: any = await usersService.oauth(code as string)
   const urlRedirect = `${process.env.GOOGLE_CLIENT_REDIRECT_CALLBACK}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}`
   return res.redirect(urlRedirect)
   // return res.json({
@@ -110,6 +110,8 @@ export const refreshTokenController = async (
 
 export const verifyEmailController = async (req: Request, res: Response) => {
   const { user_id } = req.decode_verify_email_token as TokenPayload
+  console.log('user_id: ', user_id)
+
   const user = await databaseService.users.findOne({
     _id: new ObjectId(user_id)
   })
@@ -129,6 +131,8 @@ export const verifyEmailController = async (req: Request, res: Response) => {
   }
 
   const result = await usersService.updateEmailVerifyToken(user_id)
+  console.log('Hello')
+
   return res.status(HTTP_STATUS.OK).json({
     message: 'Email verify success!',
     result
