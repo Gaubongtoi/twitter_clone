@@ -2,7 +2,6 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import { Request, Response } from 'express'
 import { SearchQuery } from '~/models/requests/Search.requests'
 import searchService from '~/services/search.services'
-import { TokenPayload } from '~/models/requests/User.requests'
 
 export const searchController = async (req: Request<ParamsDictionary, any, any, SearchQuery>, res: Response) => {
   const limit = Number(req.query.limit)
@@ -11,6 +10,8 @@ export const searchController = async (req: Request<ParamsDictionary, any, any, 
     page,
     limit,
     content: req.query.content,
+    media_type: req.query.media_type,
+    people_follow: req.query.people_follow,
     user_id: req.decode_authorization?.user_id as string
   })
   return res.json({

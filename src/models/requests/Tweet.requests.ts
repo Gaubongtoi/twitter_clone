@@ -1,5 +1,4 @@
 import { ParamsDictionary, Query } from 'express-serve-static-core'
-import { ObjectId } from 'mongodb'
 import { TweetAudience, TweetType } from '~/constants/enums'
 import { Media } from '../Others'
 

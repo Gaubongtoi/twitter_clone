@@ -1,19 +1,68 @@
 import { SearchQuery } from '~/models/requests/Search.requests'
 import databaseService from './database.services'
 import { ObjectId } from 'mongodb'
-import { TweetType } from '~/constants/enums'
+import { MediaType, MediaTypeQuery, PeopleFollow, TweetType } from '~/constants/enums'
 
 class SearchService {
-  async search({ content, page, limit, user_id }: { content: string; page: number; limit: number; user_id: string }) {
+  async search({
+    content,
+    page,
+    limit,
+    user_id,
+    media_type,
+    people_follow
+  }: {
+    content: string
+    page: number
+    limit: number
+    user_id: string
+    media_type?: MediaTypeQuery
+    people_follow?: PeopleFollow
+  }) {
     // const result = await
+    const match: any = {
+      $text: {
+        $search: content
+      }
+    }
+    if (media_type) {
+      if (media_type === MediaTypeQuery.Image) {
+        match['medias.type'] = MediaType.Image
+      }
+      if (media_type === MediaTypeQuery.Video) {
+        match['medias.type'] = {
+          $in: [MediaType.Video, MediaType.HLS]
+        }
+      }
+    }
+    if (people_follow && people_follow === '1') {
+      const user_id_obj = new ObjectId(user_id)
+      // Lấy ra 1 mảng chứa tất cả những người follow của user_id đó
+      // => những người follow id
+      const followed_user_id = await databaseService.followers
+        .find(
+          {
+            user_id: user_id_obj
+          },
+          {
+            projection: {
+              followed_user_id: 1,
+              _id: 0
+            }
+          }
+        )
+        .toArray()
+      const ids = followed_user_id.map((follow) => follow.followed_user_id)
+      // Mong muon newfeeds se lay luon ca tweet cua minh
+      ids.push(user_id_obj)
+      match['user_id'] = {
+        $in: ids
+      }
+    }
     const tweets = await databaseService.tweets
       .aggregate([
         {
-          $match: {
-            $text: {
-              $search: content
-            }
-          }
+          $match: match
         },
         {
           $lookup: {
@@ -174,11 +223,7 @@ class SearchService {
       databaseService.tweets
         .aggregate([
           {
-            $match: {
-              $text: {
-                $search: content
-              }
-            }
+            $match: match
           },
           {
             $lookup: {
