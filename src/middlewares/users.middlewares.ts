@@ -13,6 +13,7 @@ import { TokenPayload } from '~/models/requests/User.requests'
 import { ObjectId } from 'mongodb'
 import { UserVerifyStatus } from '~/constants/enums'
 import { REGEX_USERNAME } from '~/constants/regex'
+import { verifyAccessToken } from '~/utils/common'
 
 // Middleware (tiền xử lý response và request): đóng vai trò là cầu nối giữa người dùng và phần nhân của hệ thống
 // là trung gian của req/res và các xử lý logic bên trong web server
@@ -208,24 +209,7 @@ export const accessTokenValidator = validate(
           options: async (value, { req }) => {
             // Lấy ra accessToken từ authorization
             const access_token = value.split(' ')[1]
-            // Kiểm tra 1 lần nữa cho chắc:))
-            // console.log(access_token);
-            if (access_token === undefined) {
-              throw new ErrorWithStatus({ message: 'AccessToken is required!', status: HTTP_STATUS.UNAUTHORIZED }) // -> error.middleware
-            }
-            try {
-              const decode_authorization = await verifyToken({
-                token: access_token,
-                secretOnPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
-              })
-              ;(req as Request).decode_authorization = decode_authorization
-            } catch (error) {
-              throw new ErrorWithStatus({
-                message: capitalize((error as JsonWebTokenError).message),
-                status: HTTP_STATUS.UNAUTHORIZED
-              })
-            }
-            // return true
+            return await verifyAccessToken(access_token, req as Request)
           }
         }
       }
@@ -691,6 +675,36 @@ export const followValidator = validate(
       }
     },
     ['body']
+  )
+)
+
+export const getConversationValidator = validate(
+  checkSchema(
+    {
+      receiver_id: {
+        // isString: true,
+        custom: {
+          options: async (value: string, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                message: 'ID followed_user_id invalid',
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+            const followed_user = databaseService.users.findOne({
+              _id: new ObjectId(value)
+            })
+            if (followed_user === null) {
+              throw new ErrorWithStatus({
+                message: 'User not found',
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+          }
+        }
+      }
+    },
+    ['params']
   )
 )
 export const unfollowValidator = validate(

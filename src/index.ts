@@ -24,15 +24,18 @@ import databaseService from './services/database.services'
 import { defaultErrorHandler } from './middlewares/errors.middlewares'
 import mediasRouter from './routes/medias.routes'
 import { initFolder } from './utils/files'
-import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from './constants/dir'
+import { UPLOAD_VIDEO_DIR } from './constants/dir'
 import staticRouter from './routes/static.routes'
 import tweetsRoute from './routes/tweets.routes'
 import bookmarksRouter from './routes/bookmarks.routes'
 import likesRouter from './routes/likes.routes'
 import searchRouter from './routes/search.routes'
 import { createServer } from 'http'
-import { Server } from 'socket.io'
+
 import cors from 'cors'
+import conservationsRoute from './routes/conservations.routes'
+import initSocket from './utils/socket'
+import helmet from 'helmet'
 // import './utils/faker'
 const app = express()
 const httpServer = createServer(app)
@@ -43,6 +46,7 @@ const corsOptions = {
   optionSuccessStatus: 200,
   exposedHeaders: 'X-Total-Count'
 }
+app.use(helmet())
 app.use(cors(corsOptions))
 // console.log(option.development);
 
@@ -58,6 +62,7 @@ app.use('/api/tweets', tweetsRoute)
 app.use('/api/bookmarks', bookmarksRouter)
 app.use('/api/likes', likesRouter)
 app.use('/api/search', searchRouter)
+app.use('/api/message', conservationsRoute)
 
 app.use('/static', staticRouter)
 app.use('/static', express.static(UPLOAD_VIDEO_DIR))
@@ -70,46 +75,7 @@ app.use(defaultErrorHandler)
 databaseService.connect().then(() => {
   databaseService.indexTweets()
 })
-const io = new Server(httpServer, {
-  // Cau hinh CORS cho toan bo http client duoc su dung server
-  cors: {
-    origin: '*'
-  }
-})
-const users: {
-  [key: string]: {
-    socket_id: string
-  }
-} = {}
-// Connect
-// io.on('connection', (socket) => {}): dòng này lắng nghe sự kiện 'connection'. Khi bên phía client truy cập 
-// vào website và sử dụng server để thao tác với các chức năng, thì nó sẽ được đăng ký 1 đối tượng socket 
-io.on('connection', (socket) => {
-  // Khi client muốn kết nối với Socket, nó sẽ gửi cho server một 'handshake HTTP request'
-  const user_id = socket.handshake.auth.user_id // Lấy ra user_id từ thông tin xác thực của người dùng trong quá trình handshake
-  // { '668223d809420cd1cd153599': { socket_id: 'HZhQJLpUZs2X7GWmAAAD' } } 
-  users[user_id] = {
-    socket_id: socket.id 
-  }
-  // console.log(users);
-  
-  // socket.on -> lắng nghe sự kiện 'private message' từ emit bên phía client A. Khi sự kiện này xảy ra,
-  // hàm callback sẽ được gọi với tham số là data chứa thông tin tin nhắn
-  socket.on('private message', (data) => {
-    // Lấy ra socket_id của người sẽ nhận tin nhắn này
-    const receiver_socket_id = users[data.to].socket_id
-    // Gửi về phía client B chứa thông tin tin nhắn và user_id của người gửi
-    socket.to(receiver_socket_id).emit('receiver private message', {
-      content: data.content,
-      from: user_id
-    })
-  })
-  // Lắng nghe sự kiện disconnect bên phía client
-  socket.on('disconnect', () => {
-    delete users[user_id]
-    console.log(`user ${socket.id} disconnect!`)
-  })
-})
+initSocket(httpServer)
 httpServer.listen(port, () => {
   console.log(`Example app listening on port http://localhost:${port}`)
 })
