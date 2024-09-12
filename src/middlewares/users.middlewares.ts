@@ -39,10 +39,19 @@ export const loginValidator = validate(
           // và {req}
           options: async (value, { req }) => {
             // Lúc này, sử dụng
-            const user = await databaseService.users.findOne({
-              email: value,
-              password: hashPassword(req.body.password)
-            })
+            const user = await databaseService.users.findOne(
+              {
+                email: value,
+                password: hashPassword(req.body.password)
+              },
+              {
+                projection: {
+                  password: 0,
+                  email_verify_token: 0,
+                  forgot_password_token: 0
+                }
+              }
+            )
             if (user === null) {
               // throw ra 1 lỗi, đồng thời tạo ra 1 đối tượng được tạo ra từ ErrorWithStatus và xuất ra lỗi
               // Khi sử dụng throw, mặc định nó sẽ xuất ra lỗi, chạy ra file index.ts và nhảy vào defaultErrorHandler để trả về lỗi
@@ -248,8 +257,6 @@ export const refreshTokenValidator = validate(
               // const decode_refresh_token = await verifyToken({ token: value })
               ;(req as Request).decode_refresh_token = decode_refresh_token
             } catch (error) {
-              console.log(error)
-
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
                   message: capitalize(error.message),

@@ -35,7 +35,10 @@ export const loginController = async (req: Request<ParamsDictionary, any, LoginR
     const result = await usersService.login({ user_id: user_id.toString(), verify: user.verify })
     return res.json({
       msg: 'Login success',
-      result
+      result: {
+        user,
+        ...result
+      }
     })
   } else {
     // Xử lý trường hợp user._id không tồn tại
