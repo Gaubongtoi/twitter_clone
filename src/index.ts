@@ -36,6 +36,7 @@ import cors from 'cors'
 import conservationsRoute from './routes/conservations.routes'
 import initSocket from './utils/socket'
 import helmet from 'helmet'
+import notificationRoutes from './routes/notifications.routes'
 // import './utils/faker'
 const app = express()
 const httpServer = createServer(app)
@@ -63,6 +64,7 @@ app.use('/api/bookmarks', bookmarksRouter)
 app.use('/api/likes', likesRouter)
 app.use('/api/search', searchRouter)
 app.use('/api/message', conservationsRoute)
+app.use('/api/notifications', notificationRoutes)
 
 app.use('/static', staticRouter)
 app.use('/static', express.static(UPLOAD_VIDEO_DIR))

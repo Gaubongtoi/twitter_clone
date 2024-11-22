@@ -291,47 +291,49 @@ class SearchService {
     }
   }
   async searchMentions({ q, page, limit, user_id }: { q: string; page: number; limit: number; user_id: string }) {
-    const users = await databaseService.users
-      .find({
-        $or: [
-          {
-            username: {
-              $regex: `.*${q}.*`, // Tìm kiếm `q` ở bất kỳ đâu trong username
-              $options: 'i' // Không phân biệt chữ hoa/thường
-            }
-          },
-          {
-            name: {
-              $regex: `.*${q}.*`, // Tìm kiếm `q` ở bất kỳ đâu trong tên
-              $options: 'i' // Không phân biệt chữ hoa/thường
-            }
-          }
-        ]
-      })
-      .skip((page - 1) * limit) // Bỏ qua số tài liệu
-      .limit(limit) // Giới hạn số tài liệu trả về
-      .toArray()
-    const total = await databaseService.users.countDocuments({
-      $or: [
+    if (q === null || q === '') {
+      return {
+        users: [],
+        total: 0
+      }
+    }
+
+    const query = {
+      $and: [
+        { _id: { $ne: new ObjectId(user_id) } }, // Loại trừ user_id
         {
-          username: {
-            $regex: `.*${q}.*`, // Tìm kiếm `q` ở bất kỳ đâu trong username
-            $options: 'i' // Không phân biệt chữ hoa/thường
-          }
-        },
-        {
-          name: {
-            $regex: `.*${q}.*`, // Tìm kiếm `q` ở bất kỳ đâu trong tên
-            $options: 'i' // Không phân biệt chữ hoa/thường
-          }
+          $or: [
+            {
+              username: {
+                $regex: `.*${q}.*`,
+                $options: 'i'
+              }
+            },
+            {
+              name: {
+                $regex: `.*${q}.*`,
+                $options: 'i'
+              }
+            }
+          ]
         }
       ]
-    })
+    }
+
+    const users = await databaseService.users
+      .find(query)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .toArray()
+
+    const total = await databaseService.users.countDocuments(query)
+
     return {
       users,
       total
     }
   }
+
   async searchHashtags({ q, page, limit, user_id }: { q: string; limit: number; page: number; user_id: string }) {
     const hashtags = await databaseService.hashtags
       .find({

@@ -24,7 +24,7 @@ const tweetsRoute = Router()
 /*
  * Description: Create Tweet
  * Path: /
- * Mehtod: POST
+ * Method: POST
  * Body: TweetReqBody
  */
 tweetsRoute.post(
@@ -38,7 +38,7 @@ tweetsRoute.post(
 /*
  * Description: Get Tweet detail using by userId
  * Path: /user_id=:userId
- * Mehtod: GET
+ * Method: GET
  * Header: {Authorization?: Bearer {access_token}}
  * Param: {tweet_id: string}
  *
@@ -55,7 +55,7 @@ tweetsRoute.get(
 /*
  * Description: Get Tweet detail
  * Path: /:tweet_id
- * Mehtod: GET
+ * Method: GET
  * Header: {Authorization?: Bearer {access_token}}
  * Param: {tweet_id: string}
  *
@@ -72,7 +72,7 @@ tweetsRoute.get(
 /*
  * Description: Delete Tweet (Comment, Retweet, Quote)
  * Path: /:tweet_id
- * Mehtod: DELETE
+ * Method: DELETE
  * Header: {Authorization?: Bearer {access_token}} => Get ra được user_id
  * Params: {tweet_id: string}
  * Ý tưởng: Khi truyền đi trong Params -> Nếu như check xem type của Tweet đó.
@@ -93,7 +93,7 @@ tweetsRoute.delete(
 /*
  * Description: Delete Tweet (Comment, Retweet, Quote)
  * Path: /:tweet_id
- * Mehtod: DELETE
+ * Method: DELETE
  * Header: {Authorization?: Bearer {access_token}} => Get ra được user_id
  * Params: {tweet_id: string}
  * Ý tưởng: đầu vào sẽ bao gồm access_token -> get ra được user_id, get được parent_id của retweet đó, và type mặc định của nó
@@ -110,7 +110,7 @@ tweetsRoute.delete(
 /*
  * Description: Get Tweet Comment (Pagination)
  * Path: /:tweet_id/children
- * Mehtod: GET
+ * Method: GET
  * Header: {Authorization?: Bearer {access_token}}
  * Query: {limit: number, page: number, tweet_type: TweetType}
  */
@@ -125,7 +125,7 @@ tweetsRoute.get(
 /*
  * Description: Get New feeds (Pagination)
  * Path: /new-feeds
- * Mehtod: GET
+ * Method: GET
  * Header: {Authorization?: Bearer {access_token}}
  * Query: {limit: number, page: number}
  */

@@ -56,18 +56,6 @@ export const createTweetValidator = validate(
         // và hashtags: #hashtags thì content phải là string và không được rỗng
         options: (value, { req }) => {
           const type = req.body.type as TweetType
-          const hashtags = req.body.hashtags as string[]
-          const mentions = req.body.mentions as string[]
-          // if (
-          //   [TweetType.Comment, TweetType.QuoteTweet, TweetType.Tweet].includes(type) &&
-          //   isEmpty(hashtags) && // check arr isEmpty
-          //   isEmpty(mentions) && // check arr isEmpty
-          //   value === '' // content truyền vào phải là 1 chuỗi và không được rỗng
-          // ) {
-          //   console.log(value === '')
-
-          //   throw new Error('Content must be a non empty string')
-          // }
           if (type === TweetType.Retweet && Boolean(value)) {
             throw new Error('Content must be null')
           }

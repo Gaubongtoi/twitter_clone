@@ -8,6 +8,7 @@ import { UserVerifyStatus } from '~/constants/enums'
 import { ErrorWithStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { Server as ServerHttp } from 'http'
+import Notification from '~/models/schema/Notifications.schema'
 const initSocket = (httpServer: ServerHttp) => {
   const io = new Server(httpServer, {
     // Cau hinh CORS cho toan bo http client duoc su dung server
@@ -87,6 +88,15 @@ const initSocket = (httpServer: ServerHttp) => {
       })
       // Gửi về phía client B chứa thông tin tin nhắn và user_id của người gửi
       const new_id = await databaseService.conservations.insertOne(conversation)
+      await databaseService.notifications.insertOne(
+        new Notification({
+          type: 4,
+          sender_id: new ObjectId(data.payload.sender_id as string),
+          receiver_id: new ObjectId(data.payload.receiver_id as string),
+          tweet_id: null,
+          content: data.payload.content
+        })
+      )
       conversation._id = new_id.insertedId
       if (receiver_socket_id) {
         socket.to(receiver_socket_id).emit('receiver_message', {

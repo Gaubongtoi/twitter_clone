@@ -133,25 +133,26 @@ class BookmarkService {
             }
         },
         {
-          $addFields:
-            /**
-             * newField: The new field name.
-             * expression: The new field expression.
-             */
-            {
-              mentions: {
-                $map: {
-                  input: '$mentions',
-                  as: 'mention',
-                  in: {
-                    _id: '$$mention._id',
-                    name: '$$mention.name',
-                    email: '$$mention.email',
-                    username: '$$mention.name'
-                  }
+          $addFields: {
+            mentions: {
+              $map: {
+                input: '$mentions',
+                as: 'mention',
+                in: {
+                  _id: '$$mention._id',
+                  name: '$$mention.name',
+                  email: '$$mention.email',
+                  username: '$$mention.username',
+                  bio: '$$mention.bio',
+                  cover_photo: '$$mention.cover_photo',
+                  avatar: '$$mention.avatar',
+                  followingUsers: '$followingUsers',
+                  // Thêm toàn bộ mảng followingUsers
+                  followedUsers: '$followedUsers' // Thêm toàn bộ mảng followedUsers
                 }
               }
             }
+          }
         },
         {
           $lookup:

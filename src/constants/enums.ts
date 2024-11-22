@@ -38,3 +38,16 @@ export enum PeopleFollow {
   Anyone = '0',
   Following = '1'
 }
+
+export enum NotificationType {
+  Following,
+  Like, //
+  Comment, //
+  QuoteTweet, //
+  Message //
+}
+
+export enum HasRead {
+  Unread,
+  Read
+}

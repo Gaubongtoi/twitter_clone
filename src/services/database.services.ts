@@ -8,6 +8,7 @@ import Hashtags from '~/models/schema/Hashtags.schema'
 import Bookmark from '~/models/schema/Bookmarks.schema'
 import Likes from '~/models/schema/Likes.schema'
 import Conservations from '~/models/schema/Conversations.schema'
+import Notification from '~/models/schema/Notifications.schema'
 config()
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@practicemongo.ltrx9ag.mongodb.net/?retryWrites=true&w=majority&appName=PracticeMongo`
 class DatabaseService {
@@ -48,6 +49,9 @@ class DatabaseService {
   }
   get conservations(): Collection<Conservations> {
     return this.db.collection(process.env.DB_CONSERVATIONS_COLLECTION as string)
+  }
+  get notifications(): Collection<Notification> {
+    return this.db.collection(process.env.DB_NOTIFICATIONS_COLLECTION as string)
   }
   async connect() {
     try {
