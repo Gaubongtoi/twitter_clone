@@ -1,7 +1,8 @@
 import { EntityError, ErrorWithStatus } from './../models/Errors'
 import express from 'express'
 import { body, validationResult, ContextRunner, ValidationChain } from 'express-validator'
-import { RunnableValidationChains } from 'express-validator/src/middlewares/schema'
+// import { RunnableValidationChains } from 'express-validator/src'
+import { RunnableValidationChains } from 'express-validator/lib/middlewares/schema'
 import HTTP_STATUS from '~/constants/httpStatus'
 // Manually running validations
 // can be reused by many routes
