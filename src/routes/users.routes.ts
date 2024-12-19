@@ -149,7 +149,7 @@ usersRouter
   .patch(
     '/me',
     accessTokenValidator,
-    verifiedUserValidatior,
+    // verifiedUserValidatior,
     updateMeValidator,
     filterMiddleware<UpdateMeReqBody>([
       'name',
@@ -170,7 +170,7 @@ usersRouter
    * Header: {Authorization: Bearer <access_token>}
    * Body: {followed_user_id: string}
    */
-  .post('/follow', accessTokenValidator, verifiedUserValidatior, followValidator, wrapReqHandler(followController))
+  .post('/follow', accessTokenValidator, followValidator, wrapReqHandler(followController))
   /*
    * Description: Unfollow someone
    * Path: /follow/user_id
@@ -178,7 +178,7 @@ usersRouter
    * Header: {Authorization: Bearer <access_token>}
    * Body: {followed_user_id: string}
    */
-  .delete('/follow/:user_id', accessTokenValidator, verifiedUserValidatior, unfollowValidator, unfollowController)
+  .delete('/follow/:user_id', accessTokenValidator, unfollowValidator, unfollowController)
   /*
    * Description: Change Password
    * Path: /change_password
@@ -189,7 +189,7 @@ usersRouter
   .put(
     '/change_password',
     accessTokenValidator,
-    verifiedUserValidatior,
+    // verifiedUserValidatior,
     changePasswordValidator,
     wrapReqHandler(changePasswordController)
   )

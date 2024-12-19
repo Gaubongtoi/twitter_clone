@@ -27,21 +27,21 @@ notificationRoutes
   .post(
     '/',
     isUserLoggedInValidator(accessTokenValidator),
-    isUserLoggedInValidator(verifiedUserValidatior),
+    // isUserLoggedInValidator(verifiedUserValidatior),
     createNotificationValidator,
     wrapReqHandler(createNotificationController)
   )
   .get(
     '/',
     isUserLoggedInValidator(accessTokenValidator),
-    isUserLoggedInValidator(verifiedUserValidatior),
+    // isUserLoggedInValidator(verifiedUserValidatior),
     paginationValidator,
     wrapReqHandler(getNotificationByIdController)
   )
   .get(
     '/check-notifications',
     isUserLoggedInValidator(accessTokenValidator),
-    isUserLoggedInValidator(verifiedUserValidatior),
+    // isUserLoggedInValidator(verifiedUserValidatior),
     wrapReqHandler(checkNotificationsByIdController)
   )
 export default notificationRoutes

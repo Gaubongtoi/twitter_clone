@@ -37,7 +37,7 @@ bookmarksRouter.get(
 bookmarksRouter.post(
   '/',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   tweetIdValidator,
   wrapReqHandler(bookmarkTweetController)
 )
@@ -50,7 +50,7 @@ bookmarksRouter.post(
 bookmarksRouter.delete(
   '/tweets/:tweet_id',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   tweetIdValidator,
   wrapReqHandler(unbookmarkTweetController)
 )

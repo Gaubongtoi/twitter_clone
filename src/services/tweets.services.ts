@@ -1168,12 +1168,11 @@ class TweetsService {
             }
           },
           {
-            // Lookup số lượng like từ collection 'likes'
             $lookup: {
               from: 'likes',
-              localField: '_id', // Field trong tweet gốc
-              foreignField: 'tweet_id', // Field trong collection likes
-              as: 'likes' // Mảng chứa các likes của tweet
+              localField: '_id',
+              foreignField: 'tweet_id',
+              as: 'likes'
             }
           },
 
@@ -1181,11 +1180,8 @@ class TweetsService {
             $lookup: {
               // Truy vấn tới collection users
               from: 'users',
-              // Lấy trường mentions ở collection tweet
               localField: 'mentions',
-              // Lấy trường đó để tham chiếu với _id ở user => Lấy ra 1 mảng chứa những obj user
               foreignField: '_id',
-              // Đặt tên
               as: 'mentions'
             }
           },

@@ -15,7 +15,12 @@ const mediasRouter = Router()
  * Body: {Form Data: image}
  * Ràng buộc: bắt buộc phải login
  */
-mediasRouter.post('/upload-image', accessTokenValidator, verifiedUserValidatior, wrapReqHandler(uploadImageController))
+mediasRouter.post(
+  '/upload-image',
+  accessTokenValidator,
+  // verifiedUserValidatior
+  wrapReqHandler(uploadImageController)
+)
 
 /*
  * Description: Upload Single Video
@@ -23,7 +28,12 @@ mediasRouter.post('/upload-image', accessTokenValidator, verifiedUserValidatior,
  * Mehtod: POST
  * Body: {}
  */
-mediasRouter.post('/upload-video', accessTokenValidator, verifiedUserValidatior, wrapReqHandler(uploadVideoController))
+mediasRouter.post(
+  '/upload-video',
+  accessTokenValidator,
+  // verifiedUserValidatior,
+  wrapReqHandler(uploadVideoController)
+)
 /*
  * Description: Upload Single Video
  * Path: /upload-video
@@ -33,7 +43,7 @@ mediasRouter.post('/upload-video', accessTokenValidator, verifiedUserValidatior,
 mediasRouter.post(
   '/upload-video-hls',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   wrapReqHandler(uploadVideoHLSController)
 )
 

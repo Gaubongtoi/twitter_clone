@@ -16,7 +16,7 @@ conservationsRoute.get(
   '/receivers',
   paginationValidator,
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   wrapReqHandler(getReceiversController)
 )
 
@@ -32,7 +32,7 @@ conservationsRoute.get(
   '/',
   paginationValidator,
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   getConversationValidator,
   wrapReqHandler(getConservationController)
 )

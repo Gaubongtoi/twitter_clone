@@ -15,7 +15,7 @@ const likesRouter = Router()
 likesRouter.post(
   '/',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   tweetIdValidator,
   wrapReqHandler(likeTweetController)
 )
@@ -28,7 +28,7 @@ likesRouter.post(
 likesRouter.delete(
   '/tweets/:tweet_id',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   tweetIdValidator,
   wrapReqHandler(unlikeTweetController)
 )

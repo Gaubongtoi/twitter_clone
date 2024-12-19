@@ -21,9 +21,8 @@ class SearchService {
   }) {
     // const result = await
     const match: any = {
-      $text: {
-        $search: content
-      }
+      content: { $regex: content, $options: 'i' },
+      type: { $nin: [TweetType.Comment, TweetType.Retweet] }
     }
     if (media_type) {
       if (media_type === MediaTypeQuery.Image) {
@@ -124,7 +123,12 @@ class SearchService {
                   _id: '$$mention._id',
                   name: '$$mention.name',
                   email: '$$mention.email',
-                  username: '$$mention.name'
+                  username: '$$mention.username',
+                  bio: '$$mention.bio',
+                  cover_photo: '$$mention.cover_photo',
+                  avatar: '$$mention.avatar',
+                  followingUsers: '$followingUsers',
+                  followedUsers: '$followedUsers'
                 }
               }
             }
@@ -148,6 +152,38 @@ class SearchService {
         },
         {
           $lookup: {
+            from: 'followers',
+            localField: 'mentions._id',
+            foreignField: 'user_id',
+            as: 'followingData'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'followingData.followed_user_id',
+            foreignField: '_id',
+            as: 'followingUsers'
+          }
+        },
+        {
+          $lookup: {
+            from: 'followers',
+            localField: 'mentions._id',
+            foreignField: 'followed_user_id',
+            as: 'followedData'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'followedData.user_id',
+            foreignField: '_id',
+            as: 'followedUsers'
+          }
+        },
+        {
+          $lookup: {
             from: 'tweet',
             localField: '_id',
             foreignField: 'parent_id',
@@ -156,43 +192,25 @@ class SearchService {
         },
         {
           $addFields: {
-            bookmarks: {
-              $size: '$bookmarks'
-            },
-            likes: {
-              $size: '$likes'
-            },
-            retweet_count: {
-              $size: {
-                $filter: {
-                  input: '$tweet_children',
-                  as: 'item',
-                  cond: {
-                    $eq: ['$$item.type', TweetType.Retweet]
-                  }
-                }
+            comments: {
+              $filter: {
+                input: '$tweet_children', // Mảng các tweet con
+                as: 'child', // Tên biến đại diện cho từng tweet con
+                cond: { $eq: ['$$child.type', TweetType.Comment] } // Lọc những tweet có type là 2 (comment)
               }
             },
-            comment_count: {
-              $size: {
-                $filter: {
-                  input: '$tweet_children',
-                  as: 'item',
-                  cond: {
-                    $eq: ['$$item.type', TweetType.Comment]
-                  }
-                }
+            retweets: {
+              $filter: {
+                input: '$tweet_children',
+                as: 'child',
+                cond: { $eq: ['$$child.type', TweetType.Retweet] } // Lọc những tweet có type là 1 (retweet)
               }
             },
-            quote_count: {
-              $size: {
-                $filter: {
-                  input: '$tweet_children',
-                  as: 'item',
-                  cond: {
-                    $eq: ['$$item.type', TweetType.QuoteTweet]
-                  }
-                }
+            quote_tweets: {
+              $filter: {
+                input: '$tweet_children',
+                as: 'child',
+                cond: { $eq: ['$$child.type', TweetType.QuoteTweet] } // Lọc những tweet có type là 3 (quote tweet)
               }
             }
           }
@@ -200,6 +218,10 @@ class SearchService {
         {
           $project: {
             tweet_children: 0,
+            followedData: 0,
+            followedUsers: 0,
+            followingData: 0,
+            followingUsers: 0,
             user: {
               password: 0,
               email_verify_token: 0,
@@ -208,6 +230,9 @@ class SearchService {
               date_of_birth: 0
             }
           }
+        },
+        {
+          $sort: { created_at: -1 } // Sắp xếp theo thời gian mới nhất trước
         },
         {
           $skip: limit * (page - 1) // Cong thuc phan trang

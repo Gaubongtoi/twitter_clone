@@ -30,7 +30,7 @@ const tweetsRoute = Router()
 tweetsRoute.post(
   '/',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   createTweetValidator,
   wrapReqHandler(createTweetController)
 )
@@ -47,7 +47,6 @@ tweetsRoute.get(
   '/user',
   paginationValidator,
   isUserLoggedInValidator(accessTokenValidator),
-  // isUserLoggedInValidator(verifiedUserValidatior),
   getTweetByIdValidator,
   wrapReqHandler(getTweetByIdController)
 )
@@ -64,7 +63,6 @@ tweetsRoute.get(
   '/:tweet_id',
   tweetIdValidator,
   isUserLoggedInValidator(accessTokenValidator),
-  isUserLoggedInValidator(verifiedUserValidatior),
   audienceValidator,
   wrapReqHandler(getTweetController)
 )
@@ -87,7 +85,6 @@ tweetsRoute.delete(
   '/remove/:tweet_id',
   tweetIdValidator,
   isUserLoggedInValidator(accessTokenValidator),
-  isUserLoggedInValidator(verifiedUserValidatior),
   wrapReqHandler(deleteTweetController)
 )
 /*
@@ -103,7 +100,6 @@ tweetsRoute.delete(
   '/remove/retweet/:tweet_id',
   tweetIdValidator,
   isUserLoggedInValidator(accessTokenValidator),
-  isUserLoggedInValidator(verifiedUserValidatior),
   wrapReqHandler(deleteRetweetController)
 )
 
@@ -119,7 +115,6 @@ tweetsRoute.get(
   getTweetChildValidator,
   paginationValidator,
   isUserLoggedInValidator(accessTokenValidator),
-  isUserLoggedInValidator(verifiedUserValidatior),
   wrapReqHandler(getTweetChildrenController)
 )
 /*
@@ -134,7 +129,6 @@ tweetsRoute.get(
   // getTweetChildValidator,
   paginationValidator,
   accessTokenValidator,
-  verifiedUserValidatior,
   wrapReqHandler(getNewFeedsController)
 )
 export default tweetsRoute

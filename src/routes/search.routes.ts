@@ -16,7 +16,7 @@ const searchRouter = Router()
 searchRouter.get(
   '/',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   paginationValidator,
   searchValidator,
   searchController
@@ -32,7 +32,7 @@ searchRouter.get(
 searchRouter.get(
   '/mentions',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   paginationValidator,
   searchMentionsValidation,
   searchMentionsController
@@ -48,7 +48,7 @@ searchRouter.get(
 searchRouter.get(
   '/hashtags',
   accessTokenValidator,
-  verifiedUserValidatior,
+  // verifiedUserValidatior,
   paginationValidator,
   searchMentionsValidation,
   searchHashtagsController

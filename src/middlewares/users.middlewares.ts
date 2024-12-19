@@ -115,6 +115,8 @@ export const registerValidator = validate(
           options: async (value, { req }) => {
             // Lúc này, sử dụng
             const email = await usersService.checkIsEmail(value)
+            console.log(email)
+
             if (email) {
               // throw ra 1 lỗi, đồng thời tạo ra 1 đối tượng được tạo ra từ ErrorWithStatus và xuất ra lỗi
               // Khi sử dụng throw, mặc định nó sẽ xuất ra lỗi, chạy ra file index.ts và nhảy vào defaultErrorHandler để trả về lỗi

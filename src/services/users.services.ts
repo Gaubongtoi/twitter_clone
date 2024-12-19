@@ -120,6 +120,8 @@ class UsersService {
   async checkIsEmail(email: string) {
     // biến isEmail sẽ kiểm tra trong service có tồn tại email không, nếu có thì trả về id, còn nếu không thì trả về null
     const isEmail = await databaseService.users.findOne({ email })
+    console.log(isEmail)
+
     return Boolean(isEmail)
   }
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {

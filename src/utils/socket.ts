@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb'
 import Conservations from '~/models/schema/Conversations.schema'
 import databaseService from '~/services/database.services'
 import { TokenPayload } from '~/models/requests/User.requests'
-import { UserVerifyStatus } from '~/constants/enums'
+import { NotificationType, UserVerifyStatus } from '~/constants/enums'
 import { ErrorWithStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { Server as ServerHttp } from 'http'
@@ -90,7 +90,7 @@ const initSocket = (httpServer: ServerHttp) => {
       const new_id = await databaseService.conservations.insertOne(conversation)
       await databaseService.notifications.insertOne(
         new Notification({
-          type: 4,
+          type: NotificationType.Message,
           sender_id: new ObjectId(data.payload.sender_id as string),
           receiver_id: new ObjectId(data.payload.receiver_id as string),
           tweet_id: null,
