@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --development",
     "build": "rimraf ./dist && tsc && tsc-alias",
-    "start": "node dist/src/main --production",
+    "start": "node dist/src/main",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check .",
