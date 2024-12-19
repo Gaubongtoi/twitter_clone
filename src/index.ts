@@ -40,7 +40,7 @@ import notificationRoutes from './routes/notifications.routes'
 // import './utils/faker'
 const app = express()
 const httpServer = createServer(app)
-const port = process.env.PORT
+const port = process.env.PORT || 8001
 const corsOptions = {
   origin: '*',
   credentials: true, //access-control-allow-credentials:true
