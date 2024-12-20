@@ -140,7 +140,6 @@ class ConservationServices {
         ])
         .toArray()
     ])
-    console.log('receiver: ', receivers)
     console.log('total: ', total)
     return {
       receivers,

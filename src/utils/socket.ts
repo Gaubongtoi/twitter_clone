@@ -28,14 +28,14 @@ const initSocket = (httpServer: ServerHttp) => {
     const access_token = Authorization?.split(' ')[1]
     try {
       const decode_authorization = await verifyAccessToken(access_token)
-      const { verify } = decode_authorization as TokenPayload
-      if (verify !== UserVerifyStatus.Verified) {
-        // Throw ra 1 loi. Ben phia client se lang nghe su kien error nay
-        throw new ErrorWithStatus({
-          message: 'User not verified',
-          status: HTTP_STATUS.FORBIDDEN
-        })
-      }
+      // const { verify } = decode_authorization as TokenPayload
+      // if (verify !== UserVerifyStatus.Verified) {
+      //   // Throw ra 1 loi. Ben phia client se lang nghe su kien error nay
+      //   throw new ErrorWithStatus({
+      //     message: 'User not verified',
+      //     status: HTTP_STATUS.FORBIDDEN
+      //   })
+      // }
       // Truyen decode_authorization vao socket de su dung o cac middleware khac
       socket.handshake.auth.decode_authorization = decode_authorization
       socket.handshake.auth.access_token = access_token
@@ -81,11 +81,14 @@ const initSocket = (httpServer: ServerHttp) => {
     socket.on('send_message', async (data) => {
       // Lấy ra socket_id của người sẽ nhận tin nhắn này
       const receiver_socket_id = users[data.payload.receiver_id]?.socket_id
+      console.log(users[data.payload.receiver_id]?.socket_id)
+
       const conversation = new Conservations({
         sender_id: new ObjectId(data.payload.sender_id as string),
         receiver_id: new ObjectId(data.payload.receiver_id as string),
         content: data.payload.content
       })
+
       // Gửi về phía client B chứa thông tin tin nhắn và user_id của người gửi
       const new_id = await databaseService.conservations.insertOne(conversation)
       await databaseService.notifications.insertOne(
